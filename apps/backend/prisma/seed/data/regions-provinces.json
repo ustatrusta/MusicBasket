@@ -1,0 +1,9 @@
+[
+  {"region":"Marmara","code":"marmara","provinces":["İstanbul","Edirne","Kırklareli","Tekirdağ","Kocaeli","Sakarya","Yalova","Bursa","Balıkesir","Çanakkale","Bilecik"]},
+  {"region":"Ege","code":"ege","provinces":["İzmir","Aydın","Muğla","Manisa","Denizli","Uşak","Kütahya","Afyonkarahisar"]},
+  {"region":"Akdeniz","code":"akdeniz","provinces":["Antalya","Isparta","Burdur","Adana","Mersin","Hatay","Osmaniye","Kahramanmaraş"]},
+  {"region":"İç Anadolu","code":"ic-anadolu","provinces":["Ankara","Konya","Karaman","Aksaray","Niğde","Nevşehir","Kırşehir","Kayseri","Sivas","Yozgat","Kırıkkale","Çankırı","Eskişehir"]},
+  {"region":"Karadeniz","code":"karadeniz","provinces":["Zonguldak","Bartın","Karabük","Kastamonu","Sinop","Samsun","Amasya","Tokat","Çorum","Ordu","Giresun","Trabzon","Rize","Artvin","Gümüşhane","Bayburt","Bolu","Düzce"]},
+  {"region":"Doğu Anadolu","code":"dogu-anadolu","provinces":["Erzurum","Erzincan","Kars","Ardahan","Iğdır","Ağrı","Muş","Bingöl","Tunceli","Elazığ","Malatya","Van","Bitlis","Hakkari"]},
+  {"region":"Güneydoğu Anadolu","code":"guneydogu-anadolu","provinces":["Gaziantep","Kilis","Adıyaman","Şanlıurfa","Diyarbakır","Mardin","Batman","Siirt","Şırnak"]}
+]

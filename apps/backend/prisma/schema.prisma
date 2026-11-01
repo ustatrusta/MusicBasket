@@ -1,0 +1,666 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  GUEST
+  USER
+  EDITOR
+  REVIEWER
+  ADMIN
+}
+
+enum ContentStatus {
+  DRAFT
+  REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+  ARCHIVED
+}
+
+enum LicenseType {
+  PUBLIC_DOMAIN
+  LICENSED
+  USER_SUBMITTED
+  CREATIVE_COMMONS
+  UNKNOWN
+}
+
+enum EventType {
+  SONG_VIEW
+  SONG_SEARCH
+  SONG_FAVORITE_ADD
+  SONG_FAVORITE_REMOVE
+  SONG_SHARE
+  TUNER_OPEN
+}
+
+enum SourceType {
+  COMPILER
+  SOURCE_PERSON
+  ARCHIVE
+  PUBLICATION
+  OTHER
+}
+
+enum SongVerseType {
+  VERSE
+  CHORUS
+  BRIDGE
+}
+
+enum NotationFormat {
+  IMAGE
+  PDF
+  MUSICXML
+  MIDI
+}
+
+enum ChordFormat {
+  CHORDPRO
+  PLAIN_TEXT
+  JSON
+}
+
+enum VideoType {
+  VIDEO
+  SOLFEGE
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  FAMILY
+}
+
+model User {
+  id                 String               @id @default(cuid())
+  email              String               @unique
+  displayName        String
+  passwordHash       String?
+  role               UserRole             @default(USER)
+  googleProviderId   String?              @unique
+  appleProviderId    String?              @unique
+  phone              String?
+  isActive           Boolean              @default(true)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  refreshTokens      RefreshToken[]
+  favorites          UserFavorite[]
+  collections        UserCollection[]
+  activityEvents     UserActivityEvent[]
+  preferences        UserPreference?
+  tuningPresets      UserTuningPreset[]
+  recordings         Recording[]
+  contentChangeLogs  ContentChangeLog[]
+}
+
+model RefreshToken {
+  id         String   @id @default(cuid())
+  userId     String
+  tokenHash  String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model MusicGenre {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  code      String   @unique
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  songs     Song[]
+}
+
+model ContentLicense {
+  id          String      @id @default(cuid())
+  type        LicenseType
+  ownerName   String?
+  termsUrl    String?
+  expiresAt   DateTime?
+  note        String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  songs       Song[]
+  songSources SongSource[]
+}
+
+model Song {
+  id                String             @id @default(cuid())
+  genreId           String
+  title             String
+  slug              String             @unique
+  searchKey         String
+  category          String?
+  status            ContentStatus      @default(DRAFT)
+  isVerified        Boolean            @default(false)
+  publishedAt       DateTime?
+  licenseId         String?
+  deletedAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  genre             MusicGenre         @relation(fields: [genreId], references: [id])
+  license           ContentLicense?    @relation(fields: [licenseId], references: [id])
+  aliases           SongAlias[]
+  lyrics            SongLyrics[]
+  favorites         UserFavorite[]
+  metadataEntries   SongMetadata[]
+  regions           SongRegion[]
+  stories           SongStory[]
+  sources           SongSource[]
+  notations         SongNotation[]
+  chords            SongChord[]
+  tabs              SongTab[]
+  artists           SongArtist[]
+  composers         SongComposer[]
+  activityEvents    UserActivityEvent[]
+  collectionItems   CollectionItem[]
+  recordings        Recording[]
+  videoSearches     SongVideoSearch[]
+  trendingScores    TrendingScore[]
+
+  @@index([genreId])
+  @@index([status])
+  @@index([searchKey])
+}
+
+model SongAlias {
+  id        String   @id @default(cuid())
+  songId     String
+  alias      String
+  note       String?
+  isPrimary  Boolean  @default(false)
+  deletedAt  DateTime?
+  createdAt  DateTime @default(now())
+  song       Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([songId])
+}
+
+model SongLyrics {
+  id             String      @id @default(cuid())
+  songId          String
+  versionName     String
+  language        String
+  content         String
+  source          String?
+  copyrightNote   String?
+  isPrimary       Boolean     @default(false)
+  status          ContentStatus @default(DRAFT)
+  deletedAt       DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  song            Song        @relation(fields: [songId], references: [id], onDelete: Cascade)
+  verses          SongVerse[]
+  chords          SongChord[]
+
+  @@index([songId])
+}
+
+model SongVerse {
+  id          String       @id @default(cuid())
+  lyricsId     String
+  orderIndex   Int
+  type         SongVerseType
+  text         String
+  createdAt    DateTime     @default(now())
+  lyrics       SongLyrics   @relation(fields: [lyricsId], references: [id], onDelete: Cascade)
+
+  @@index([lyricsId, orderIndex])
+}
+
+model SongMetadata {
+  id             String       @id @default(cuid())
+  songId          String
+  rhythmId        String?
+  timeSignature   String?
+  makam           String?
+  scale           String?
+  tempo           Int?
+  rawJson         Json?
+  deletedAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  song            Song         @relation(fields: [songId], references: [id], onDelete: Cascade)
+  rhythm          Rhythm?      @relation(fields: [rhythmId], references: [id])
+
+  @@index([songId])
+}
+
+model SongRegion {
+  id           String    @id @default(cuid())
+  songId        String
+  regionId      String
+  provinceId    String?
+  districtId    String?
+  confidence    Float?
+  disputed      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  song          Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  region        Region    @relation(fields: [regionId], references: [id])
+  province      Province? @relation(fields: [provinceId], references: [id])
+  district      District? @relation(fields: [districtId], references: [id])
+
+  @@index([songId])
+  @@index([regionId])
+}
+
+model SongStory {
+  id             String        @id @default(cuid())
+  songId          String
+  content         String
+  verifiedFacts   String?
+  oralTradition   String?
+  sourcesJson     Json?
+  status          ContentStatus @default(DRAFT)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  song            Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([songId])
+}
+
+model SongSource {
+  id               String      @id @default(cuid())
+  songId            String
+  type              SourceType
+  name              String
+  detail            String?
+  url               String?
+  licenseId         String?
+  createdAt         DateTime   @default(now())
+  song              Song       @relation(fields: [songId], references: [id], onDelete: Cascade)
+  contentLicense    ContentLicense? @relation(fields: [licenseId], references: [id])
+
+  @@index([songId])
+}
+
+model SongNotation {
+  id           String         @id @default(cuid())
+  songId        String
+  format        NotationFormat
+  fileUrl       String
+  mimeType      String
+  resolution    String?
+  isVerified    Boolean        @default(false)
+  status        ContentStatus  @default(DRAFT)
+  deletedAt     DateTime?
+  createdAt     DateTime       @default(now())
+  song          Song           @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@index([songId])
+}
+
+model SongChord {
+  id             String        @id @default(cuid())
+  songId          String
+  lyricsId        String?
+  chordSeqJson    Json
+  format          ChordFormat
+  isVerified      Boolean       @default(false)
+  status          ContentStatus @default(DRAFT)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  song            Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  lyrics          SongLyrics?   @relation(fields: [lyricsId], references: [id])
+
+  @@index([songId])
+}
+
+model SongTab {
+  id             String        @id @default(cuid())
+  songId          String
+  instrumentId    String
+  tabText         String
+  format          String
+  status          ContentStatus @default(DRAFT)
+  deletedAt       DateTime?
+  createdAt       DateTime      @default(now())
+  song            Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  instrument      Instrument    @relation(fields: [instrumentId], references: [id])
+
+  @@index([songId])
+}
+
+model Artist {
+  id          String      @id @default(cuid())
+  name        String
+  bio         String?
+  birthYear   Int?
+  regionId    String?
+  isVerified  Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  region      Region?     @relation(fields: [regionId], references: [id])
+  songs       SongArtist[]
+}
+
+model Composer {
+  id          String        @id @default(cuid())
+  name        String
+  bio         String?
+  birthYear   Int?
+  regionId    String?
+  isVerified  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  region      Region?       @relation(fields: [regionId], references: [id])
+  songs       SongComposer[]
+}
+
+model SongArtist {
+  id         String   @id @default(cuid())
+  songId     String
+  artistId   String
+  role       String?
+  orderIndex Int      @default(0)
+  song       Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  artist     Artist   @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, artistId])
+}
+
+model SongComposer {
+  id          String    @id @default(cuid())
+  songId      String
+  composerId  String
+  role        String?
+  orderIndex  Int       @default(0)
+  song        Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  composer    Composer  @relation(fields: [composerId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, composerId])
+}
+
+model Region {
+  id         String      @id @default(cuid())
+  name       String
+  code       String      @unique
+  countryCode String     @default("TR")
+  createdAt  DateTime    @default(now())
+  provinces  Province[]
+  songLinks  SongRegion[]
+  artists    Artist[]
+  composers  Composer[]
+}
+
+model Province {
+  id         String      @id @default(cuid())
+  regionId   String
+  name       String
+  plateCode  String?
+  createdAt  DateTime    @default(now())
+  region     Region      @relation(fields: [regionId], references: [id], onDelete: Restrict)
+  districts  District[]
+  songLinks  SongRegion[]
+
+  @@unique([regionId, name])
+}
+
+model District {
+  id          String      @id @default(cuid())
+  provinceId  String
+  name        String
+  createdAt   DateTime    @default(now())
+  province    Province    @relation(fields: [provinceId], references: [id], onDelete: Restrict)
+  songLinks   SongRegion[]
+
+  @@unique([provinceId, name])
+}
+
+model Instrument {
+  id           String              @id @default(cuid())
+  name         String
+  slug         String              @unique
+  isActive     Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  instrumentTypes InstrumentType[]
+  tuningSystems TuningSystem[]
+  tabs         SongTab[]
+  recordings   Recording[]
+}
+
+model InstrumentType {
+  id                 String                @id @default(cuid())
+  instrumentId       String
+  name               String
+  slug               String
+  createdAt          DateTime              @default(now())
+  instrument         Instrument            @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  tuningConfigurations TuningConfiguration[]
+
+  @@unique([instrumentId, slug])
+}
+
+model TuningSystem {
+  id              String                @id @default(cuid())
+  instrumentId    String
+  name            String
+  slug            String
+  description     String?
+  referenceSource String
+  isVerified      Boolean               @default(false)
+  createdAt       DateTime              @default(now())
+  instrument      Instrument            @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  configurations  TuningConfiguration[]
+
+  @@unique([instrumentId, slug])
+}
+
+model TuningConfiguration {
+  id                 String              @id @default(cuid())
+  instrumentTypeId   String
+  tuningSystemId     String
+  name               String
+  stringCount        Int
+  stringGroupsJson   Json?
+  referenceNote      String?
+  referenceOctave    Int?
+  referenceFrequencyHz Float?
+  alternativeTunings Json?
+  regionalVariation  String?
+  referenceSource    String
+  isOfficial         Boolean             @default(false)
+  isVerified         Boolean             @default(false)
+  status             ContentStatus       @default(DRAFT)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  instrumentType     InstrumentType      @relation(fields: [instrumentTypeId], references: [id], onDelete: Restrict)
+  tuningSystem       TuningSystem        @relation(fields: [tuningSystemId], references: [id], onDelete: Restrict)
+  strings            TuningString[]
+  userPresets        UserTuningPreset[]
+
+  @@unique([instrumentTypeId, name])
+  @@index([tuningSystemId])
+}
+
+model TuningString {
+  id               String              @id @default(cuid())
+  configurationId  String
+  orderIndex       Int
+  groupName        String
+  courseIndex      Int
+  targetNote       String
+  targetOctave     Int
+  targetFrequencyHz Float?
+  isOpenString     Boolean             @default(true)
+  configuration    TuningConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@unique([configurationId, orderIndex])
+}
+
+model Rhythm {
+  id             String      @id @default(cuid())
+  name           String
+  slug           String      @unique
+  timeSignature  String?
+  subdivisions   String?
+  accentPattern  String?
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  metadataRows   SongMetadata[]
+}
+
+model VideoProvider {
+  id         String            @id @default(cuid())
+  name       String
+  code       String            @unique
+  isActive   Boolean           @default(true)
+  searches   SongVideoSearch[]
+}
+
+model SongVideoSearch {
+  id            String        @id @default(cuid())
+  songId         String
+  providerId     String
+  queryText      String
+  type           VideoType
+  resultsJson    Json?
+  cachedUntil    DateTime?
+  createdAt      DateTime      @default(now())
+  song           Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  provider       VideoProvider @relation(fields: [providerId], references: [id], onDelete: Restrict)
+
+  @@index([songId, providerId])
+}
+
+model ContentChangeLog {
+  id            String      @id @default(cuid())
+  entityType     String
+  entityId       String
+  action         String
+  beforeJson     Json?
+  afterJson      Json?
+  actorUserId    String?
+  createdAt      DateTime   @default(now())
+  actorUser      User?      @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+}
+
+model UserFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  songId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song      Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, userId])
+  @@index([userId])
+}
+
+model UserCollection {
+  id          String           @id @default(cuid())
+  userId       String
+  name         String
+  isPublic     Boolean         @default(false)
+  coverArtUrl  String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items        CollectionItem[]
+}
+
+model CollectionItem {
+  id            String         @id @default(cuid())
+  collectionId   String
+  songId         String
+  position       Int
+  createdAt      DateTime      @default(now())
+  collection     UserCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  song           Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, songId])
+  @@unique([collectionId, position])
+}
+
+model UserActivityEvent {
+  id          String     @id @default(cuid())
+  userId       String?
+  songId       String?
+  sessionId    String?
+  eventType    EventType
+  deviceInfo   String?
+  createdAt    DateTime  @default(now())
+  user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  song         Song?     @relation(fields: [songId], references: [id], onDelete: SetNull)
+
+  @@index([songId, eventType])
+  @@index([userId, createdAt])
+}
+
+model UserPreference {
+  id               String   @id @default(cuid())
+  userId            String   @unique
+  theme             String   @default("system")
+  language          String   @default("tr")
+  fontScale         Float    @default(1)
+  contentFiltersJson Json?
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserTuningPreset {
+  id                  String               @id @default(cuid())
+  userId               String
+  baseConfigurationId  String?
+  name                 String
+  referenceFrequencyHz Float               @default(440)
+  stringOverrides      Json?
+  createdAt            DateTime            @default(now())
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  baseConfiguration    TuningConfiguration? @relation(fields: [baseConfigurationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model Recording {
+  id            String      @id @default(cuid())
+  userId         String
+  songId         String?
+  instrumentId   String?
+  fileName       String
+  durationSec    Int
+  sizeBytes      Int
+  cloudBackedUp  Boolean     @default(false)
+  createdAt      DateTime    @default(now())
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  song           Song?       @relation(fields: [songId], references: [id], onDelete: SetNull)
+  instrument     Instrument? @relation(fields: [instrumentId], references: [id], onDelete: SetNull)
+}
+
+model SubscriptionPlan {
+  id              String           @id @default(cuid())
+  code            String           @unique
+  name            String
+  tier            SubscriptionTier
+  isActive        Boolean          @default(true)
+  metadataJson    Json?
+  createdAt       DateTime         @default(now())
+}
+
+model TrendingScore {
+  id             String   @id @default(cuid())
+  songId         String
+  periodStart    DateTime
+  periodEnd      DateTime
+  score          Float
+  rankSnapshot   Int?
+  createdAt      DateTime @default(now())
+  song           Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+
+  @@unique([songId, periodStart, periodEnd])
+  @@index([periodStart, score])
+}

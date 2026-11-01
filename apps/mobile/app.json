@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "Müzik Sepeti",
+    "slug": "muzik-sepeti",
+    "scheme": "muziksepeti",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

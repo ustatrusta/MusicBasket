@@ -1,0 +1,16 @@
+node_modules
+.pnpm-store
+.env
+.env.*
+!.env.example
+dist
+coverage
+.next
+.expo
+.expo-shared
+*.log
+.DS_Store
+apps/backend/prisma/dev.db
+apps/backend/prisma/dev.db-journal
+
+.turbo

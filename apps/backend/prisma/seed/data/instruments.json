@@ -1,0 +1,18 @@
+{
+  "instruments": [
+    "Bağlama",
+    "Gitar",
+    "Klasik Gitar",
+    "Elektrik Gitar",
+    "Bas Gitar",
+    "Keman",
+    "Çello",
+    "Ukulele",
+    "Mandolin",
+    "Diğer"
+  ],
+  "instrumentTypes": [
+    { "instrument": "Bağlama", "name": "Kısa Sap Bağlama", "slug": "kisa-sap-baglama" },
+    { "instrument": "Bağlama", "name": "Uzun Sap Bağlama", "slug": "uzun-sap-baglama" }
+  ]
+}

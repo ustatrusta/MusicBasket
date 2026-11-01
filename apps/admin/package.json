@@ -1,0 +1,24 @@
+{
+  "name": "@muzik-sepeti/admin",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "echo 'No tests for admin scaffold'"
+  },
+  "dependencies": {
+    "@muzik-sepeti/shared": "workspace:*",
+    "next": "14.2.20",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "18.3.12",
+    "typescript": "^5.7.2"
+  }
+}
